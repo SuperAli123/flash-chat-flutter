@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flash_chat/constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,10 +10,11 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  final textFieldControler = TextEditingController();
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
   User loggedInUser;
-  String messegesText;
+  String inputMessegesText;
 
   @override
   void initState() {
@@ -51,6 +51,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: null,
         actions: <Widget>[
@@ -71,6 +72,39 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            StreamBuilder<QuerySnapshot>(
+              stream: _firestore.collection('messeges').snapshots(),
+              builder: (context, snapshot) {
+                List<MessegeBubble> messegesTextWidget = [];
+                if (snapshot.hasData) {
+                  final messeges = snapshot.data.docs;
+                  for (var messege in messeges) {
+                    final messegeText = messege.data()['text'];
+                    final messegeSender = messege.data()['sender'];
+
+                    final messegeData = MessegeBubble(
+                      messegeText: messegeText,
+                      messegeSender: messegeSender,
+                    );
+
+                    // final messegeData = Text(
+                    //     "$messegeText from $messegeSender ${messege.data()['alias'] == null ? '' : messege.data()['alias']}");
+                    messegesTextWidget.add(messegeData);
+                  }
+                  return Expanded(
+                    child: ListView(
+                      children: messegesTextWidget,
+                    ),
+                  );
+                } else {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      backgroundColor: Colors.black,
+                    ),
+                  );
+                }
+              },
+            ),
             Container(
               decoration: kMessageContainerDecoration,
               child: Row(
@@ -78,18 +112,24 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: <Widget>[
                   Expanded(
                     child: TextField(
+                      controller: textFieldControler,
+                      style: TextStyle(color: Colors.black),
                       onChanged: (value) {
                         //Do something with the user input.
-                        messegesText = value;
+                        inputMessegesText = value;
                       },
                       decoration: kMessageTextFieldDecoration,
                     ),
                   ),
                   FlatButton(
                     onPressed: () {
+                      textFieldControler.clear();
                       //Implement send functionality.
-                      _firestore.collection('messeges').add(
-                          {'sender': loggedInUser.email, 'text': messegesText});
+                      _firestore.collection('messeges').add({
+                        'sender': loggedInUser.email,
+                        'text': inputMessegesText,
+                        'alias': 'goku',
+                      });
                     },
                     child: Text(
                       'Send',
@@ -101,6 +141,39 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class MessegeBubble extends StatelessWidget {
+  MessegeBubble({this.messegeText, this.messegeSender, this.alias});
+
+  final String messegeText;
+  final String messegeSender;
+  final String alias;
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            messegeSender,
+            style: TextStyle(fontSize: 11.0),
+          ),
+          Material(
+            borderRadius: BorderRadius.circular(15.0),
+            elevation: 5.5,
+            color: Colors.amberAccent,
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              child: Text("$messegeText  ${alias == null ? '' : alias}"),
+            ),
+          ),
+        ],
       ),
     );
   }
