@@ -33,6 +33,21 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // getMessege() async {
+  //   final messegesData = await _firestore.collection('messeges').get();
+  //   for (var messeges in messegesData.docs) {
+  //     print(messeges.data);
+  //   }
+  // }
+
+  getMessegeStream() async {
+    await for (var snapshot in _firestore.collection('messeges').snapshots()) {
+      for (var messeges in snapshot.docs) {
+        print(messeges.data());
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,9 +57,10 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
               icon: Icon(Icons.close),
               onPressed: () {
+                getMessegeStream();
                 //Implement logout functionality
-                _auth.signOut();
-                Navigator.pop(context);
+                // _auth.signOut();
+                // Navigator.pop(context);
               }),
         ],
         title: Text('⚡️Chat'),
