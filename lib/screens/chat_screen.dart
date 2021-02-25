@@ -60,8 +60,8 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: () {
                 getMessegeStream();
                 //Implement logout functionality
-                // _auth.signOut();
-                // Navigator.pop(context);
+                _auth.signOut();
+                Navigator.pop(context);
               }),
         ],
         title: Text('⚡️Chat'),
@@ -77,7 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
               builder: (context, snapshot) {
                 List<MessegeBubble> messegesTextWidget = [];
                 if (snapshot.hasData) {
-                  final messeges = snapshot.data.docs;
+                  final messeges = snapshot.data.docs.reversed;
                   for (var messege in messeges) {
                     final messegeText = messege.data()['text'];
                     final messegeSender = messege.data()['sender'];
@@ -85,6 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     final messegeData = MessegeBubble(
                       messegeText: messegeText,
                       messegeSender: messegeSender,
+                      isMe: loggedInUser.email == messegeSender ? true : false,
                     );
 
                     // final messegeData = Text(
@@ -93,6 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   }
                   return Expanded(
                     child: ListView(
+                      reverse: true,
                       children: messegesTextWidget,
                     ),
                   );
@@ -147,30 +149,45 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class MessegeBubble extends StatelessWidget {
-  MessegeBubble({this.messegeText, this.messegeSender, this.alias});
+  MessegeBubble({this.messegeText, this.messegeSender, this.alias, this.isMe});
 
   final String messegeText;
   final String messegeSender;
   final String alias;
+  final bool isMe;
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
             messegeSender,
             style: TextStyle(fontSize: 11.0),
           ),
           Material(
-            borderRadius: BorderRadius.circular(15.0),
+            borderRadius: isMe == true
+                ? BorderRadius.only(
+                    topLeft: Radius.circular(15.0),
+                    bottomLeft: Radius.circular(15.0),
+                    bottomRight: Radius.circular(15.0))
+                : BorderRadius.only(
+                    topRight: Radius.circular(15.0),
+                    bottomLeft: Radius.circular(15.0),
+                    bottomRight: Radius.circular(15.0)),
             elevation: 5.5,
-            color: Colors.amberAccent,
+            color: isMe == true ? Colors.amberAccent : Colors.orangeAccent,
             child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-              child: Text("$messegeText  ${alias == null ? '' : alias}"),
+              child: Text(
+                "$messegeText  ${alias == null ? '' : alias}",
+                style: TextStyle(
+                  color: isMe ? Colors.black : Colors.white,
+                ),
+              ),
             ),
           ),
         ],
